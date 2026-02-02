@@ -513,17 +513,17 @@ class MyStopAgent(BasicAgent):
         # Stop signs in the world
         self._stop_signs_list = self._world.get_actors().filter("*stop*")
 
-        # Similar to _last_traffic_light in BasicAgent
+        # To prevent repeated triggering of the same stop sign
         self._last_stop_sign = None
 
         # Counter: run_step() is called each tick, so pause for 30 ticks
         self._stop_countdown = 0
         self._stop_cycles = 30
 
-        # A base threshold like traffic lights; you can tune this
+        # A base threshold for stop sign detection
         self._base_stop_threshold = 7.0  # meters
 
-        # Follow speed limits (per assignment)
+        # Follow speed limits
         self.follow_speed_limits(True)
 
     def _affected_by_stop_sign(self, stop_signs_list=None, max_distance=None):
@@ -576,9 +576,9 @@ class MyStopAgent(BasicAgent):
 
     def run_step(self):
         """
-        Same structure as BasicAgent.run_step(), plus stop sign logic + 30-tick pause.
+        Execute one step of navigation plus stop sign logic + 30-tick pause.
         """
-        hazard_detected = False
+        hazard_detected = False # Indicates whether the vehicle should perform an emergency stop in this tick
 
         # If we are currently stopped for a stop sign, keep braking
         if self._stop_countdown > 0:
@@ -587,23 +587,23 @@ class MyStopAgent(BasicAgent):
             control = self.add_emergency_stop(control)
             return control
 
-        # --- Start with the same checks as BasicAgent ---
+        # Retrieve all relevant actors (same as BasicAgent)
         vehicle_list = self._world.get_actors().filter("*vehicle*")
         vehicle_speed = get_speed(self._vehicle) / 3.6
 
-        # vehicle obstacle check
+        # vehicle obstacle check (same as BasicAgent)
         max_vehicle_distance = self._base_vehicle_threshold + self._speed_ratio * vehicle_speed
         affected_by_vehicle, _, _ = self._vehicle_obstacle_detected(vehicle_list, max_vehicle_distance)
         if affected_by_vehicle:
             hazard_detected = True
 
-        # traffic light check (already exists in BasicAgent)
+        # traffic light check (same as BasicAgent)
         max_tlight_distance = self._base_tlight_threshold + self._speed_ratio * vehicle_speed
         affected_by_tlight, _ = self._affected_by_traffic_light(self._lights_list, max_tlight_distance)
         if affected_by_tlight:
             hazard_detected = True
 
-        # --- New: stop sign check (similar style to traffic lights) ---
+        # --- New: stop sign check ---
         max_stop_distance = self._base_stop_threshold + self._speed_ratio * vehicle_speed
         affected_by_stop, stop_actor = self._affected_by_stop_sign(self._stop_signs_list, max_stop_distance)
         if affected_by_stop:
