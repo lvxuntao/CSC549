@@ -489,3 +489,130 @@ class BasicAgent(object):
             plan.append((next_wp, RoadOption.LANEFOLLOW))
 
         return plan
+
+class MyStopAgent(BasicAgent):
+    """
+    MyStopAgent: extends BasicAgent, and additionally stops at stop signs for 30 ticks.
+    """
+
+    def __init__(self, vehicle, target_speed=20, opt_dict=None, map_inst=None, grp_inst=None):
+        # Must explicitly initialize these options (per assignment)
+        if opt_dict is None:
+            opt_dict = {}
+        opt_dict['ignore_traffic_lights'] = False
+        opt_dict['ignore_stop_signs'] = False
+
+        super(MyStopAgent, self).__init__(
+            vehicle,
+            target_speed=target_speed,
+            opt_dict=opt_dict,
+            map_inst=map_inst,
+            grp_inst=grp_inst
+        )
+
+        # Stop signs in the world
+        self._stop_signs_list = self._world.get_actors().filter("*stop*")
+
+        # Similar to _last_traffic_light in BasicAgent
+        self._last_stop_sign = None
+
+        # Counter: run_step() is called each tick, so pause for 30 ticks
+        self._stop_countdown = 0
+        self._stop_cycles = 30
+
+        # A base threshold like traffic lights; you can tune this
+        self._base_stop_threshold = 7.0  # meters
+
+        # Follow speed limits (per assignment)
+        self.follow_speed_limits(True)
+
+    def _affected_by_stop_sign(self, stop_signs_list=None, max_distance=None):
+        if self._ignore_stop_signs:
+            return (False, None)
+
+        if not stop_signs_list:
+            stop_signs_list = self._world.get_actors().filter("*stop*")
+
+        if max_distance is None:
+            max_distance = self._base_stop_threshold
+
+        # 防止同一个 stop sign 反复触发
+        if self._last_stop_sign:
+            ego_loc = self._vehicle.get_location()
+            last_loc = self._last_stop_sign.get_transform().location
+            if ego_loc.distance(last_loc) <= max_distance * 2.0:
+                return (False, None)
+            self._last_stop_sign = None
+
+        ego_tf = self._vehicle.get_transform()
+        ego_loc = ego_tf.location
+        ego_wp = self._map.get_waypoint(ego_loc)
+
+        for stop_actor in stop_signs_list:
+            sign_loc = stop_actor.get_transform().location
+
+            # 关键：用 stop sign 附近道路 waypoint 作为“触发点”
+            try:
+                stop_wp = self._map.get_waypoint(sign_loc, project_to_road=True, lane_type=carla.LaneType.Driving)
+            except Exception:
+                continue
+            if stop_wp is None:
+                continue
+
+            # 同路同车道过滤（可选但建议）
+            # if stop_wp.road_id != ego_wp.road_id:
+            #     continue
+            if stop_wp.lane_id != ego_wp.lane_id:
+                continue
+
+            # 用 waypoint transform 来做“在前方锥内”的判断
+            trigger_tf = stop_wp.transform
+
+            # 触发点不在路边，通常会在你前方
+            if is_within_distance(trigger_tf, ego_tf, max_distance, [0, 120]):
+                return (True, stop_actor)
+
+        return (False, None)
+
+    def run_step(self):
+        """
+        Same structure as BasicAgent.run_step(), plus stop sign logic + 30-tick pause.
+        """
+        hazard_detected = False
+
+        # If we are currently stopped for a stop sign, keep braking
+        if self._stop_countdown > 0:
+            self._stop_countdown -= 1
+            control = self._local_planner.run_step()
+            control = self.add_emergency_stop(control)
+            return control
+
+        # --- Start with the same checks as BasicAgent ---
+        vehicle_list = self._world.get_actors().filter("*vehicle*")
+        vehicle_speed = get_speed(self._vehicle) / 3.6
+
+        # vehicle obstacle check
+        max_vehicle_distance = self._base_vehicle_threshold + self._speed_ratio * vehicle_speed
+        affected_by_vehicle, _, _ = self._vehicle_obstacle_detected(vehicle_list, max_vehicle_distance)
+        if affected_by_vehicle:
+            hazard_detected = True
+
+        # traffic light check (already exists in BasicAgent)
+        max_tlight_distance = self._base_tlight_threshold + self._speed_ratio * vehicle_speed
+        affected_by_tlight, _ = self._affected_by_traffic_light(self._lights_list, max_tlight_distance)
+        if affected_by_tlight:
+            hazard_detected = True
+
+        # --- New: stop sign check (similar style to traffic lights) ---
+        max_stop_distance = self._base_stop_threshold + self._speed_ratio * vehicle_speed
+        affected_by_stop, stop_actor = self._affected_by_stop_sign(self._stop_signs_list, max_stop_distance)
+        if affected_by_stop:
+            self._last_stop_sign = stop_actor
+            self._stop_countdown = self._stop_cycles
+            hazard_detected = True
+
+        control = self._local_planner.run_step()
+        if hazard_detected:
+            control = self.add_emergency_stop(control)
+
+        return control

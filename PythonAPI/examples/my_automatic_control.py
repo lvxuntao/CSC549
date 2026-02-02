@@ -59,7 +59,7 @@ import carla
 from carla import ColorConverter as cc
 
 from agents.navigation.behavior_agent import BehaviorAgent  # pylint: disable=import-error
-from agents.navigation.basic_agent import BasicAgent  # pylint: disable=import-error
+from agents.navigation.basic_agent import BasicAgent, MyStopAgent  # pylint: disable=import-error, MyStopAgent added
 from agents.navigation.constant_velocity_agent import ConstantVelocityAgent  # pylint: disable=import-error
 
 
@@ -165,8 +165,17 @@ class World(object):
                 print('There are no spawn points available in your map/town.')
                 print('Please add some Vehicle Spawn Point to your UE4 scene.')
                 sys.exit(1)
-            spawn_points = self.map.get_spawn_points()
-            spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+            # spawn_points = self.map.get_spawn_points()
+            # spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
+            # Choose spawn point
+            if args.agent == "MyStop":  # custom spawn point for MyStopAgent
+                spawn_point = carla.Transform(
+                    carla.Location(x=-45.235935, y=-36.500095, z=0.600000),
+                    carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0)
+                )
+            else:
+                spawn_points = self.map.get_spawn_points()
+                spawn_point = random.choice(spawn_points) if spawn_points else carla.Transform()
             self.player = self.world.try_spawn_actor(blueprint, spawn_point)
             self.modify_vehicle_physics(self.player)
 
@@ -737,6 +746,10 @@ def game_loop(args):
         if args.agent == "Basic":
             agent = BasicAgent(world.player, 30)
             agent.follow_speed_limits(True)
+        elif args.agent == "MyStop":
+            # Start with Basic behavior, plus stop-sign stopping logic
+            agent = MyStopAgent(world.player, target_speed=30)
+            agent.follow_speed_limits(True)
         elif args.agent == "Constant":
             agent = ConstantVelocityAgent(world.player, 30)
             ground_loc = world.world.ground_projection(world.player.get_location(), 5)
@@ -747,8 +760,13 @@ def game_loop(args):
             agent = BehaviorAgent(world.player, behavior=args.behavior)
 
         # Set the agent destination
-        spawn_points = world.map.get_spawn_points()
-        destination = random.choice(spawn_points).location
+        # spawn_points = world.map.get_spawn_points()
+        # destination = random.choice(spawn_points).location
+        if args.agent == "MyStop":
+            destination = carla.Location(x=67.659737, y=69.835068, z=0.000000)
+        else:
+            spawn_points = world.map.get_spawn_points()
+            destination = random.choice(spawn_points).location
         agent.set_destination(destination)
 
         clock = pygame.time.Clock()
@@ -845,7 +863,7 @@ def main():
         help='Sets a new random destination upon reaching the previous one (default: False)')
     argparser.add_argument(
         "-a", "--agent", type=str,
-        choices=["Behavior", "Basic", "Constant"],
+        choices=["Behavior", "Basic", "Constant", "MyStop"],    # add "MyStop" option here
         help="select which agent to run",
         default="Behavior")
     argparser.add_argument(
