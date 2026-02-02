@@ -536,7 +536,7 @@ class MyStopAgent(BasicAgent):
         if max_distance is None:
             max_distance = self._base_stop_threshold
 
-        # 防止同一个 stop sign 反复触发
+        # Prevent the same stop sign from being triggered repeatedly
         if self._last_stop_sign:
             ego_loc = self._vehicle.get_location()
             last_loc = self._last_stop_sign.get_transform().location
@@ -551,7 +551,7 @@ class MyStopAgent(BasicAgent):
         for stop_actor in stop_signs_list:
             sign_loc = stop_actor.get_transform().location
 
-            # 关键：用 stop sign 附近道路 waypoint 作为“触发点”
+            # Project the stop sign location onto the nearest drivable lane waypoint
             try:
                 stop_wp = self._map.get_waypoint(sign_loc, project_to_road=True, lane_type=carla.LaneType.Driving)
             except Exception:
@@ -559,16 +559,12 @@ class MyStopAgent(BasicAgent):
             if stop_wp is None:
                 continue
 
-            # 同路同车道过滤（可选但建议）
-            # if stop_wp.road_id != ego_wp.road_id:
-            #     continue
+            # Only consider stop signs on the same lane as the ego vehicle
             if stop_wp.lane_id != ego_wp.lane_id:
                 continue
 
-            # 用 waypoint transform 来做“在前方锥内”的判断
+            # Check if stop sign is within detection distance and in front cone
             trigger_tf = stop_wp.transform
-
-            # 触发点不在路边，通常会在你前方
             if is_within_distance(trigger_tf, ego_tf, max_distance, [0, 120]):
                 return (True, stop_actor)
 

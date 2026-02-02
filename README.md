@@ -2,8 +2,7 @@
 
 ## Group Members
 
-Member: Xuntao Lyu (xlyu5)
-Member: Lihang Liu (lliu45)
+Member: Xuntao Lyu (xlyu5), Lihang Liu (lliu45)
 
 ## Overview
 
@@ -15,8 +14,12 @@ A video demo is included to demenstrate our implementation.
 
 ### Modified Files
 
-1. **my_automatic_control.py** - Main control script
-2. **basic_agent.py** - Extended BasicAgent with stop sign detection
+1. **my_automatic_control.py**  
+   Main control script (added the `MyStop` agent option and fixed start/destination in Town10HD)
+
+2. **basic_agent.py**  
+   Added a `MyStopAgent` subclass of `BasicAgent` that stops at stop signs for a fixed number of ticks
+
 
 ### Key Features
 
