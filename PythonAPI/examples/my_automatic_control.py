@@ -196,7 +196,7 @@ class World(object):
             if args.agent == "MyStop":  # custom spawn point for MyStopAgent
                 spawn_point = carla.Transform(
                     carla.Location(x=-45.235935, y=-36.500095, z=0.600000),
-                    carla.Rotation(pitch=0.0, yaw=0.0, roll=0.0),
+                    carla.Rotation(pitch=0.0, yaw=-90.0, roll=0.0)
                 )
             else:
                 spawn_points = self.map.get_spawn_points()
