@@ -8,7 +8,7 @@ Member: Xuntao Lyu (xlyu5), Lihang Liu (lliu45)
 
 This solution implements a custom autonomous driving agent (`MyStopAgent`) for the Carla simulator that can detect and stop at stop signs for a brief moment (30 virtual clock cycles), while also respecting traffic lights and speed limits.
 
-A video demo is included to demenstrate our implementation:
+A video demo is included to demonstrate our implementation:
 https://github.com/lvxuntao/CSC549/blob/main/assets/demo.mp4
 
 ## Implementation Details
