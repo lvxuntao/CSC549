@@ -27,14 +27,10 @@ A video demo is included to demonstrate our implementation.
 
 Below is an example of the output from running the script:
 
-start time 0
-invasion {carla.libcarla.LaneMarkingType.SolidSolid}
-invasion {carla.libcarla.LaneMarkingType.SolidSolid}
-invasion {carla.libcarla.LaneMarkingType.SolidSolid}
-invasion {carla.libcarla.LaneMarkingType.SolidSolid}
+start time 1749.4879543230636
 invasion {carla.libcarla.LaneMarkingType.Broken}
 invasion {carla.libcarla.LaneMarkingType.Broken}
 invasion {carla.libcarla.LaneMarkingType.Solid}
-invasion {carla.libcarla.LaneMarkingType.Solid}
-invasion {carla.libcarla.LaneMarkingType.SolidSolid}
-The target has been reached, stopping the simulation, total time is 578.9772780127823 invasions 7 collisions 0
+The target has been reached, stopping the simulation, total time is 22.47859887778759 invasions 1 collisions 0
+invasion {carla.libcarla.LaneMarkingType.NONE}
+
