@@ -8,8 +8,7 @@ Member: Xuntao Lyu (xlyu5), Lihang Liu (lliu45)
 
 The goal of this problem was to create an aggressive autonomous agent that races to a destination as fast as possible, ignoring all traffic rules, while tracking simulation time and infractions.
 
-A video demo is included to demonstrate our implementation:
-https://github.com/lvxuntao/CSC549/blob/main/assets/hw3_p5_demo.mp4
+A video demo is included to demonstrate our implementation.
 
 ### How the PID Controller was Implemented
 
